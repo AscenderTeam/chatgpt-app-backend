@@ -16,7 +16,7 @@ TORTOISE_ORM = {
     },
     "apps": {
         "models": {
-            "models": [AscenderAuthenticationFramework.use_authentication_database(), "aerich.models"],  # Replace with the path to your models module
+            "models": [AscenderAuthenticationFramework.use_authentication_database(), "aerich.models", "entities.chat", "entities.message"],  # Replace with the path to your models module
             "default_connection": "default"
         }
     }
