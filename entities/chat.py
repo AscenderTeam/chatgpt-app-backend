@@ -14,4 +14,4 @@ class ChatEntity(Model, IdMixin, DatetimeMixin):
     invited_users = fields.ManyToManyField(
         'models.UserEntity',
         related_name='invited_to_chats',
-    )
+    )  # if more than 0, that's a group chat!
