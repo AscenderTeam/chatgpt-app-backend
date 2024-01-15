@@ -8,16 +8,8 @@ class ChatCreateDTO(BaseModel):
     name: str
     vectorstore_path: str
     config: dict
-    created_by_id: Optional[int] = Field(None, exclude=True)
+    created_by_id: int
 
-    class Config:
-        schema_extra = {
-            "example": {
-                "name": "Nombre del chat",
-                "vectorstore_path": "ruta/a/tu/vectorstore",
-                "config": {"param1": "valor1", "param2": "valor2"},
-            }
-        }
 
 class ChatUpdateDTO(BaseModel):
     name: str
