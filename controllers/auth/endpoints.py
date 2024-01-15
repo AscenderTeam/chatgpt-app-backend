@@ -4,7 +4,7 @@ from controllers.auth.repository import AuthRepo
 from controllers.auth.service import AuthService
 from core.extensions.authentication.entity import UserEntity
 from core.extensions.serializer import Serializer
-from core.guards.authenticator import GetAuthenticatedUser, IsAuthenticated
+from core.guards.authenticator import GetAuthenticatedUser, IsAuthenticated, IsAuthenticatedSocket
 from core.types import ControllerModule
 from core.utils.controller import Controller, Delete, Get, Post
 from core.utils.sockets import Listen
@@ -32,10 +32,10 @@ class Auth:
 
     ## SocketIO authentication support... In case of using SocketIO, uncomment the following code
     ## To enable SocketIO support, add this piece of code `app.use_sio()` in `bootstrap.py`
-    # @Listen("connect", all_namespaces=True)
-    # @IsAuthenticatedSocket()
-    # async def socket_auth_endpoint(self, ctx):
-    #     await ctx.emit("status", "Successfully connected")
+    @Listen("connect", all_namespaces=True)
+    @IsAuthenticatedSocket()
+    async def socket_auth_endpoint(self, ctx):
+        await ctx.emit("status", "Successfully connected")
 
 
 def setup() -> ControllerModule:

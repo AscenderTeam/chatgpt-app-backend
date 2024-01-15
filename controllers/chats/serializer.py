@@ -8,4 +8,4 @@ class ChatSerializer(Serializer):
         self.entity = entity
 
     def serialize(self):
-        return self.pd_model(**self.entity.__dict__)
+        return self.entity

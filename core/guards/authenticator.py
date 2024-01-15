@@ -98,30 +98,30 @@ class GetAuthenticatedSocket:
         
         provider = AscenderAuthenticationFramework.auth_provider
         
-        async def inner_wrapper(controller: object, ctx: ApplicationContext):
+        async def inner_wrapper(controller: object, ctx: ApplicationContext, *args, **kwargs):
             if ctx.event == "connect":
                 token: str = ctx.environ.get("HTTP_AUTHORIZATION", "").removeprefix("Bearer ")
                 user = await provider.get_authenticated_user(token)
                 if user:
                     await ctx.save_session({"token": token})
-                    return await f(controller, ctx, user)
+                    return await f(controller, ctx, user, *args, **kwargs)
                 
                 if self.disconnect_on_error:
                     await ctx.answer("error", {"message": "Unauthorized"})
                     await ctx.disconnect()
                     return
                 
-                return await f(controller, ctx, None)
+                return await f(controller, ctx, None, *args, **kwargs)
 
             session = await ctx.get_session()
             user = await provider.get_authenticated_user(session.get("token", None))
             if user:
-                return await f(controller, ctx, user)
+                return await f(controller, ctx, user, *args, **kwargs)
             else:
                 if self.disconnect_on_error:
                     await ctx.disconnect()
                     return
                 
-                return await f(controller, ctx, None)
+                return await f(controller, ctx, None, *args, **kwargs)
         
         return inner_wrapper
