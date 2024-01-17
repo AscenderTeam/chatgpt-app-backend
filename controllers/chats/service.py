@@ -8,8 +8,8 @@ class ChatService(Service):
     def __init__(self, repository: ChatRepo):
         self.repository = repository
 
-    async def create_chat(self, chat: ChatCreateDTO):
-        return await self.repository.create_chat(chat)
+    async def create_chat(self, chat: ChatCreateDTO, user: UserResponse):
+        return await self.repository.create_chat(chat, user.id)
 
     async def invite_to_chat(self, chat_id: int, member_ids: list[int], user: UserResponse):
         try:
@@ -22,8 +22,11 @@ class ChatService(Service):
 
         return invited_users
 
-    async def get_invited_chats(self, chat_id: int, user: UserResponse):
-        return await self.repository.get_invited_chats(chat_id, user.id)
+    async def get_invited_chat(self, chat_id: int, user: UserResponse):
+        return await self.repository.get_invited_chat(chat_id, user.id)
+    
+    async def get_invited_chats(self, user: UserResponse):
+        return await self.repository.get_invited_chats(user.id)
 
     async def get_chat(self, chat_id: int, user: UserResponse):
         chat = await self.repository.get_chat(chat_id, user.id)

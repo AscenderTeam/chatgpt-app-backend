@@ -32,11 +32,6 @@ class Auth:
 
     ## SocketIO authentication support... In case of using SocketIO, uncomment the following code
     ## To enable SocketIO support, add this piece of code `app.use_sio()` in `bootstrap.py`
-    @Listen("connect", all_namespaces=True)
-    @IsAuthenticatedSocket()
-    async def socket_auth_endpoint(self, ctx):
-        await ctx.emit("status", "Successfully connected")
-
 
 def setup() -> ControllerModule:
     return {

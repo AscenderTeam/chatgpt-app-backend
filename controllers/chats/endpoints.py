@@ -16,12 +16,11 @@ class ChatController:
 
     @Post("/chats", response_model=ChatCreateDTO)
     async def create_chat(self, chat: ChatCreateDTO, user: UserResponse = Depends(GetAuthenticatedUser(True))):
-        chat.created_by_id = user.id
-        return await self.chat_service.create_chat(chat)
+        return await self.chat_service.create_chat(chat, user)
 
     @Get("/chats/{chat_id}")
     async def get_chat(self, chat_id: int, user: UserResponse = Depends(GetAuthenticatedUser(True))):
-        return await self.chat_service.get_chat(chat_id)
+        return await self.chat_service.get_chat(chat_id, user)
 
     @Put("/chats/{chat_id}")
     async def update_chat(self, chat_id: int, chat: ChatUpdateDTO, user: UserResponse = Depends(GetAuthenticatedUser(True))):

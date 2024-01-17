@@ -110,7 +110,6 @@ class GetAuthenticatedSocket:
                     await ctx.answer("error", {"message": "Unauthorized"})
                     await ctx.disconnect()
                     return
-                
                 return await f(controller, ctx, None, *args, **kwargs)
 
             session = await ctx.get_session()

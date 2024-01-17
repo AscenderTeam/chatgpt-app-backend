@@ -19,6 +19,7 @@ class Listen:
             "namespace": "[ALL]" if self.all_namespaces else self.namespace,
             "use_namespace": self.use_namespace
         }
+        print(self.event, self.namespace, self.all_namespaces)
         return handler
 
 class ApplicationContext:
@@ -55,7 +56,7 @@ class ApplicationContext:
                    to: Optional[str] = None, room: Optional[str] = None,
                    skip_sid: bool = False, namespace: Optional[str] = None, **kwargs):
         if isinstance(data, BaseModel):
-            data = data.model_dump()
+            data = data.model_dump_json()
         
         await self._sio.emit(event, data, to=to, room=room, skip_sid=skip_sid, namespace=namespace or self._namespace, **kwargs)
     
@@ -63,7 +64,7 @@ class ApplicationContext:
                    to: Optional[str] = None, sid: Optional[str] = None,
                    namespace: Optional[str] = None, timeout: int = 60):
         if isinstance(data, BaseModel):
-            data = data.model_dump()
+            data = data.model_dump_json()
         
         await self._sio.call(event, data, sid=sid, to=to, namespace=namespace or self._namespace, timeout=timeout)
 

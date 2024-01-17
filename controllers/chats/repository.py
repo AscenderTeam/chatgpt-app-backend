@@ -1,9 +1,11 @@
 # controllers/chat/repository.py
-from controllers.chats.models import ChatUpdateDTO
+from controllers.chats.models import ChatCreateDTO, ChatUpdateDTO
 from core.extensions.authentication import AscenderAuthenticationFramework
 from core.extensions.authentication.entity import UserEntity
 from core.extensions.repositories import Repository
 from entities.chat import ChatEntity
+
+from tortoise.expressions import Q
 
 
 class ChatRepo(Repository):
@@ -11,16 +13,16 @@ class ChatRepo(Repository):
     def __init__(self) -> None:
         self.provider = AscenderAuthenticationFramework.auth_provider
 
-    async def create_chat(self, chat_data):
-        chat = ChatEntity(**chat_data.dict())
+    async def create_chat(self, chat_data: ChatCreateDTO, user_id: int):
+        chat = ChatEntity(**chat_data.model_dump(), created_by_id=user_id)
         await chat.save()
         return chat
 
     async def get_chat(self, chat_id: int, user_id: int):
-        return await ChatEntity.get_or_none(id=chat_id, user_id=user_id).prefetch_related("invited_users")
+        return await ChatEntity.get_or_none(Q(id=chat_id) & (Q(created_by_id=user_id) | Q(invited_users__id=user_id))).prefetch_related("invited_users")
 
     async def get_chats(self, user_id: int):
-        return await ChatEntity.filter(user_id=user_id).prefetch_related("invited_users").all()
+        return await ChatEntity.filter(created_by_id=user_id).prefetch_related("invited_users").all()
 
     async def update_chat(self, chat_id: int, chat_data: ChatUpdateDTO):
         await ChatEntity.filter(id=chat_id).update(**chat_data.model_dump())
@@ -50,5 +52,8 @@ class ChatRepo(Repository):
         
         return chat
     
-    async def get_invited_chats(self, chat_id: int, user_id: int):
+    async def get_invited_chat(self, chat_id: int, user_id: int):
         return await ChatEntity.filter(id=chat_id, invited_users__id=user_id).prefetch_related("invited_users").all()
+
+    async def get_invited_chats(self, user_id: int):
+        return await ChatEntity.filter(invited_users__id=user_id).prefetch_related("invited_users").all()

@@ -1,5 +1,6 @@
 from clis.controller_cli.cli_processor import ControllerCLI
 from clis.migrate_cli import MigrateCLI
+from clis.tests.cluster_tests import ClusterTestsCLI
 from core.application import Application
 from core.cli.processor import CLI
 
@@ -24,3 +25,5 @@ class Bootstrap:
     def cli_boot_up(_: Application, cli: CLI):
         cli.register_generic(MigrateCLI())
         cli.register_generic(ControllerCLI())
+        # Tests
+        cli.register_generic(ClusterTestsCLI())
