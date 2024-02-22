@@ -8,6 +8,7 @@ class ChatCreateDTO(BaseModel):
     name: str
     vectorstore_path: str
     config: dict
+    created_by_id: int
 
 
 class ChatUpdateDTO(BaseModel):

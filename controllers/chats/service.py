@@ -29,7 +29,7 @@ class ChatService(Service):
         return await self.repository.get_invited_chats(user.id)
 
     async def get_chat(self, chat_id: int, user: UserResponse):
-        chat = await self.repository.get_chat(chat_id, user.id)
+        chat = await self.repository.get_chat(chat_id, user)
         if not chat:
             raise HTTPException(404, "Chat not found")
 
@@ -38,8 +38,8 @@ class ChatService(Service):
     async def get_chats(self, user: UserResponse):
         return await self.repository.get_chats(user.id)
 
-    async def update_chat(self, chat_id: int, chat: ChatUpdateDTO):
-        return await self.repository.update_chat(chat_id, chat)
+    async def update_chat(self, chat_id: int, chat: ChatUpdateDTO, user: UserResponse):
+        return await self.repository.update_chat(chat_id, chat, user)
 
     async def delete_chat(self, chat_id: int, user: UserResponse):
         _deleted_chat = await self.repository.delete_chat(chat_id, user.id)

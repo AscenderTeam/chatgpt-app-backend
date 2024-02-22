@@ -10,12 +10,11 @@ from entities.message import MessageEntity
 
 class ChatEntity(Model, IdMixin, DatetimeMixin):
     name = fields.CharField(max_length=100)
-    vectorstore_path = fields.TextField()
+    vectorstore_path = fields.CharField(unique=True, max_length=1000)
     config = fields.JSONField()
     created_by = fields.ForeignKeyField("models.UserEntity", related_name="chats")
-    messages = fields.ReverseRelation("models.MessageEntity", relation_field="messages", instance=MessageEntity, from_field="chat")
     # Many-to-many relation for invited users
     invited_users = fields.ManyToManyField(
         'models.UserEntity',
         related_name='invited_to_chats',
-    )
+    )  # if more than 0, that's a group chat!
