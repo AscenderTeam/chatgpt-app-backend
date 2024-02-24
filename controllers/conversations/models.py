@@ -1,6 +1,7 @@
 from datetime import datetime
-from typing import Literal
+from typing import Literal, Optional
 from pydantic import BaseModel
+from controllers.auth.models import UserResponse
 
 from entities.message import AuthorTypeEnum, MessageEnumType
 
@@ -15,5 +16,14 @@ class MessageDTO(BaseModel):
 
 class MessageResponse(MessageDTO):
     id: int
+    author: Optional[UserResponse] = None
     created_at: datetime
     updated_at: datetime
+
+
+class PersonalityResponse(BaseModel):
+    id: int
+    name: str
+    appearance: str
+    description: str
+    first_message: str

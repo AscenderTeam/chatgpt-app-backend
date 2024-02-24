@@ -1,15 +1,20 @@
+import asyncio
+import json
+from typing import AsyncIterator
 from fastapi import HTTPException
-from pydantic import ValidationError
 from controllers.auth.models import UserResponse
 from controllers.chats.endpoints import ChatController
-from controllers.conversations.models import MessageDTO
+from controllers.conversations.models import MessageDTO, PersonalityResponse
 from controllers.conversations.serializers import MessageSerializer
 from controllers.conversations.utils.ai_memory import AIMemoryService
+from controllers.сommon.instructions.intro import INTRODUCTION_FOR_AI_GROUP, INTRODUCTION_FOR_AI_PRIVATE
+from core.extensions.serializer import QuerySetSerializer, Serializer
 from core.extensions.services import Service
 from controllers.conversations.repository import ConversationsRepo
 from core.utils.sockets import ApplicationContext
 from entities.message import AuthorTypeEnum
-from modules.cluster.ascender_ai import AscenderAIChat
+from ascenderai import AscenderAI
+from modules.cluster.types import CompletionResponse
 
 
 class ConversationsService(Service):
@@ -18,7 +23,8 @@ class ConversationsService(Service):
 
     def __init__(self, repository: ConversationsRepo) -> None:
         self._repository = repository
-        self.llm = AscenderAIChat("mixtral-8x7b", max_tokens=500, streaming=True, verbose=True)
+        self.llm = AscenderAI("ascender-7b-001", max_tokens=300, streaming=True, verbose=True)
+        self.llm.base_url = "http://178.252.103.102:8000"
     
     def __mounted__(self):
         """
@@ -27,6 +33,14 @@ class ConversationsService(Service):
         self.inject_controller("ChatController", "chats")
         self.ai_memory_service = AIMemoryService(self._repository)
     
+    async def get_personalities(self, user: UserResponse):
+        """
+        Get personalities
+        """
+        personalities = await self._repository.get_personalities()
+
+        return list(QuerySetSerializer.serialize_queryset(Serializer, PersonalityResponse, personalities))
+
     async def connect(self, ctx: ApplicationContext, user: UserResponse):
         await ctx.emit("status", "Successfully connected")
         
@@ -48,15 +62,31 @@ class ConversationsService(Service):
         except HTTPException as e:
             await ctx.emit("error", {"code": e.status_code, "details": e.detail})
             return
-
+            
+        instruction = INTRODUCTION_FOR_AI_GROUP.format(users="".join([user.username] + [u.username for u in chat.invited_users])) if len(chat.invited_users) else INTRODUCTION_FOR_AI_PRIVATE.format(user=user.username)
+        
+        if chat.personality_id is not None:
+            if chat.personality is None:
+                await ctx.emit("error", {"code": 404, "details": "Personality not found"})
+                return
+            instruction = f"Name: {chat.personality.name}\nAppearance: {chat.personality.appearance}\nDescription: {chat.personality.description}\nRules: You are engaging in infinite roleplay mode with {user.username}, follow the dialogue line and do not add user's responses to your responses"
+        
         messages = await self.ai_memory_service.get_messages(chat.id)
-        response = await self.llm.get_completion(f"""{messages.buffer_as_str}\nAI:""", stop_seqs=[f"\n{user.username}:"])
-
+        
+        try:
+            response: AsyncIterator[CompletionResponse] = await self.llm.completions.create(f"""<s><|im_start|>system\n{instruction}<|im_end|>\n{self.ai_memory_service.convert_messages(messages.buffer_as_messages)}\n<|im_start|>assistant\nAI:""", stop_seqs=["<|im_end|>"])
+        except asyncio.TimeoutError:
+            await ctx.emit("error", {"code": 408, "details": "Streaming speed timed out"})
         await ctx.emit("stream_start", {"chat_id": chat.id}, room=f"chat_{chat.id}")
         complete = ""
+        finish_reason = None
         async for chunk in response:
-            await ctx.emit("received_message", chunk["choices"][0]["text"], room=f"chat_{chat.id}")
-            complete += chunk["choices"][0]["text"]
+            await ctx.emit("stream_message", {
+                "chat_id": chat.id,
+                "content": chunk.choices[0].text,
+            }, room=f"chat_{chat.id}")
+            complete += chunk.choices[0].text
+            finish_reason = chunk.choices[0].finish_reason
 
         generated_message = await self._repository.create_message(user.id, **MessageDTO(
             content=complete,
@@ -66,7 +96,8 @@ class ConversationsService(Service):
 
         await ctx.emit("stream_end", {
             "chat_id": chat.id,
-            "message": MessageSerializer(generated_message)().model_dump_json(),
+            "finish_reason": finish_reason,
+            "message": json.loads(MessageSerializer(None, generated_message)().model_dump_json()),
         }, room=f"chat_{chat.id}")
 
     async def send_message(self, ctx: ApplicationContext, data: MessageDTO, user: UserResponse):
@@ -81,4 +112,4 @@ class ConversationsService(Service):
             return
 
         sent_message = await self._repository.create_message(user.id, **data.model_dump())
-        await ctx.emit("received_message", MessageSerializer(sent_message)(), room=f"chat_{chat.id}")
+        await ctx.emit("received_message", MessageSerializer(None, sent_message, author=user)(), room=f"chat_{chat.id}")

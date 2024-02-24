@@ -4,11 +4,14 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 from typing import Optional
 
+from controllers.auth.models import UserResponse
+from controllers.conversations.models import PersonalityResponse
+
 class ChatCreateDTO(BaseModel):
     name: str
     vectorstore_path: str
     config: dict
-    created_by_id: int
+    personality_id: Optional[int] = None
 
 
 class ChatUpdateDTO(BaseModel):
@@ -22,6 +25,9 @@ class ChatResponse(BaseModel):
     name: str
     vectorstore_path: str
     config: dict
-    created_by_id: int
+    created_by: UserResponse
+    invited_users: list[UserResponse]
+    personality_id: Optional[int] = None
+    personality: Optional[PersonalityResponse] = None
     created_at: datetime
     updated_at: datetime

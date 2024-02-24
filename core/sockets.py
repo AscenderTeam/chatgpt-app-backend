@@ -24,7 +24,7 @@ class LoadedEndpoints:
 class SocketIOApp:
     def __init__(self, app: Application, **options):
         self.app = app
-        self.server = SocketManager(self.app.app, **options)
+        self.server = SocketManager(self.app.app, cors_allowed_origins=[], **options)
     
     def add_event(self, namespace: Optional[str], event: str, handler: Coroutine) -> None:
         self.app.app.sio.on(event, self.cb_handler(event, handler, namespace), namespace=namespace)
